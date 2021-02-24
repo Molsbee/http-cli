@@ -9,13 +9,17 @@ import (
 	"strings"
 )
 
-var headers map[string]string
-var stringHeaders []string
-var include bool
+var (
+	headers       map[string]string
+	stringHeaders []string
+	include       bool
+	prettyPrint   bool
+)
 
 func init() {
 	rootCmd.AddCommand(head, get, put, post, delete)
 	rootCmd.PersistentFlags().StringSliceVarP(&stringHeaders, "headers", "H", []string{}, `-H "Content-Type: application/json"`)
+	rootCmd.PersistentFlags().BoolVarP(&prettyPrint, "pretty", "p", false, "Attempts to pretty print response based on Content-Type")
 	rootCmd.PersistentFlags().BoolVarP(&include, "include", "i", false, "Includes the response headers in the output")
 }
 

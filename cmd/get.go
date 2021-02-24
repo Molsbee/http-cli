@@ -10,7 +10,7 @@ var get = &cobra.Command{
 	Use:   "get [url]",
 	Short: "perform get request to supplied url",
 	Run: func(cmd *cobra.Command, args []string) {
-		client := service.NewRestClient(include)
+		client := service.NewRestClient(include, prettyPrint)
 		response, err := client.Get(args[0], headers)
 		if err != nil {
 			fmt.Println(err)
