@@ -14,13 +14,17 @@ var (
 	stringHeaders []string
 	include       bool
 	prettyPrint   bool
+	data          string
 )
 
 func init() {
 	rootCmd.AddCommand(head, get, put, post, delete)
 	rootCmd.PersistentFlags().StringSliceVarP(&stringHeaders, "headers", "H", []string{}, `-H "Content-Type: application/json"`)
-	rootCmd.PersistentFlags().BoolVarP(&prettyPrint, "pretty", "p", false, "Attempts to pretty print response based on Content-Type")
+	rootCmd.PersistentFlags().BoolVarP(&prettyPrint, "pretty", "p", false, "Attempts to pretty print response data based on Content-Type")
 	rootCmd.PersistentFlags().BoolVarP(&include, "include", "i", false, "Includes the response headers in the output")
+	put.PersistentFlags().StringVarP(&data, "data", "d", "", "The data that you wish to send with your request")
+	post.PersistentFlags().StringVarP(&data, "data", "d", "", "The data that you wish to send with your request")
+	delete.PersistentFlags().StringVarP(&data, "data", "d", "", "The data that you wish to send with your request")
 }
 
 var rootCmd = &cobra.Command{

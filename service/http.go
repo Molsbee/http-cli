@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"github.com/yosssi/gohtml"
 	"io"
@@ -82,21 +83,15 @@ func (rc RestClient) doRequest(request *http.Request, headers map[string]string)
 
 	resp, err := rc.client.Do(request)
 	if err != nil {
-		return "", err
+		return "", errors.New("error occurred performing request - " + err.Error())
 	}
 	defer resp.Body.Close()
 
+	rc.printResponseHeaders(resp)
+
 	dataBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
-	}
-
-	if rc.include {
-		fmt.Printf("%s %s\n", resp.Proto, resp.Status)
-		for k, v := range resp.Header {
-			fmt.Printf("%s: %s\n", k, strings.Join(v, ", "))
-		}
-		fmt.Println()
+		return "", errors.New("error occurred reading response body - " + err.Error())
 	}
 
 	// do something with response
@@ -105,6 +100,16 @@ func (rc RestClient) doRequest(request *http.Request, headers map[string]string)
 	}
 
 	return string(dataBytes), nil
+}
+
+func (rc RestClient) printResponseHeaders(resp *http.Response) {
+	if rc.include {
+		fmt.Printf("%s %s\n", resp.Proto, resp.Status)
+		for k, v := range resp.Header {
+			fmt.Printf("%s: %s\n", k, strings.Join(v, ", "))
+		}
+		fmt.Println()
+	}
 }
 
 func prettyPrint(contentType string, data []byte) (string, error) {
