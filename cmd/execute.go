@@ -18,12 +18,13 @@ import (
 var executeCmd = &cobra.Command{
 	Use:  "execute",
 	Long: `executes a yaml formatted file`,
-	Run: func(cmd *cobra.Command, args []string) {
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 || len(args[0]) == 0 {
-			fmt.Println("please provide a path to a yaml file")
-			os.Exit(1)
+			return errors.New("please provide a path to a valid yaml file")
 		}
-
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
 		filePath := args[0]
 		b, err := ioutil.ReadFile(filePath)
 		if err != nil {
