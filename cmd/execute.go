@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/Molsbee/http-cli/model"
 	"github.com/Molsbee/http-cli/service"
 	"github.com/savaki/jq"
 	"github.com/spf13/cobra"
@@ -13,19 +14,6 @@ import (
 	"strings"
 	"text/template"
 )
-
-type requests struct {
-	Requests []request `json:"requests"`
-}
-
-type request struct {
-	Name    string            `json:"name"`
-	Method  string            `json:"method"`
-	URL     string            `json:"url"`
-	Headers []string          `json:"headers"`
-	Data    string            `json:"data"`
-	Parse   map[string]string `json:"parse"`
-}
 
 var executeCmd = &cobra.Command{
 	Use:  "execute",
@@ -43,16 +31,16 @@ var executeCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		var requests requests
-		if err := yaml.Unmarshal(b, &requests); err != nil {
+		var requestFile model.RequestFile
+		if err := yaml.Unmarshal(b, &requestFile); err != nil {
 			fmt.Printf("failed to convert file to expected format - %s", err)
 			os.Exit(1)
 		}
 
 		variables := make(map[string]string)
 		client := service.NewRestClient(true, true)
-		for i := 0; i < len(requests.Requests); i++ {
-			request := requests.Requests[i]
+		for i := 0; i < len(requestFile.Requests); i++ {
+			request := requestFile.Requests[i]
 			fmt.Printf("##### %s #####", request.Name)
 			resp, clientErr := executeRequest(client, request)
 			if clientErr != nil {
@@ -66,7 +54,7 @@ var executeCmd = &cobra.Command{
 				temp, _ := template.ParseFiles(filePath)
 				temp.Execute(&buffer, variables)
 
-				yaml.Unmarshal(buffer.Bytes(), &requests)
+				yaml.Unmarshal(buffer.Bytes(), &requestFile)
 			}
 
 			fmt.Println(resp)
@@ -75,7 +63,7 @@ var executeCmd = &cobra.Command{
 	},
 }
 
-func executeRequest(client service.RestClient, request request) (string, error) {
+func executeRequest(client service.RestClient, request model.Request) (string, error) {
 	switch {
 	case strings.EqualFold(request.Method, "GET"):
 		return client.Get(request.URL, parseHeaders(request.Headers))
@@ -90,7 +78,7 @@ func executeRequest(client service.RestClient, request request) (string, error) 
 	return "unsupported method", errors.New("unsupported method")
 }
 
-func updateVariables(variables map[string]string, request request, resp string) bool {
+func updateVariables(variables map[string]string, request model.Request, resp string) bool {
 	for k, v := range request.Parse {
 		op, _ := jq.Parse(v)
 		value, _ := op.Apply([]byte(resp))
