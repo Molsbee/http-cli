@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Molsbee/http-cli/model"
 	"github.com/Molsbee/http-cli/service"
+	"github.com/gookit/color"
 	"github.com/savaki/jq"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -42,7 +43,8 @@ var executeCmd = &cobra.Command{
 		client := service.NewRestClient(true, true)
 		for i := 0; i < len(requestFile.Requests); i++ {
 			request := requestFile.Requests[i]
-			fmt.Printf("##### %s #####", request.Name)
+			color.FgLightRed.Printf("##### %s #####\n", request.Name)
+
 			resp, clientErr := executeRequest(client, request)
 			if clientErr != nil {
 				fmt.Println(clientErr)
@@ -59,7 +61,7 @@ var executeCmd = &cobra.Command{
 			}
 
 			fmt.Println(resp)
-			fmt.Println("##### END OF REQUEST #####")
+			color.FgLightRed.Println("##### END OF REQUEST #####")
 		}
 	},
 }

@@ -6,6 +6,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"github.com/gookit/color"
 	"github.com/yosssi/gohtml"
 	"io"
 	"io/ioutil"
@@ -20,6 +21,7 @@ type RestClient struct {
 }
 
 func NewRestClient(include, prettyPrint bool) RestClient {
+	color.New(color.FgLightBlue)
 	return RestClient{
 		client: &http.Client{
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -104,9 +106,9 @@ func (rc RestClient) doRequest(request *http.Request, headers map[string]string)
 
 func (rc RestClient) printResponseHeaders(resp *http.Response) {
 	if rc.include {
-		fmt.Printf("%s %s\n", resp.Proto, resp.Status)
+		fmt.Printf("%s %s\n", color.FgLightBlue.Render(resp.Proto), color.FgCyan.Render(resp.Status))
 		for k, v := range resp.Header {
-			fmt.Printf("%s: %s\n", k, strings.Join(v, ", "))
+			fmt.Printf("%s: %s\n", color.FgLightBlue.Render(k), strings.Join(v, ", "))
 		}
 		fmt.Println()
 	}
