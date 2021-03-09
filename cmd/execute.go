@@ -48,7 +48,7 @@ var executeCmd = &cobra.Command{
 			resp, clientErr := client.Execute(request.Method, request.URL, parseHeaders(request.Headers), request.Data)
 			if clientErr != nil {
 				fmt.Println(clientErr)
-				fmt.Println("##### END OF REQUEST #####")
+				color.FgLightRed.Println("##### END OF REQUEST #####")
 				continue
 			}
 
