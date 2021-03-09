@@ -13,6 +13,7 @@ var (
 	headers       map[string]string
 	stringHeaders []string
 	include       bool
+	verbose       bool
 	prettyPrint   bool
 	data          string
 )
@@ -31,7 +32,8 @@ func init() {
 	rootCmd.AddCommand(head, get, put, post, delete, executeCmd)
 	rootCmd.PersistentFlags().StringSliceVarP(&stringHeaders, "headers", "H", []string{}, `-H "Content-Type: application/json"`)
 	rootCmd.PersistentFlags().BoolVarP(&prettyPrint, "pretty", "p", false, "Attempts to pretty print response data based on Content-Type")
-	rootCmd.PersistentFlags().BoolVarP(&include, "include", "i", false, "Includes the response headers in the output")
+	rootCmd.PersistentFlags().BoolVarP(&include, "include", "i", false, "Prints the response headers in the output")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Prints the request body and headers")
 }
 
 var rootCmd = &cobra.Command{

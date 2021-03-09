@@ -14,14 +14,20 @@ import (
 	"strings"
 )
 
+var (
+	lightBlue = color.FgLightBlue.Render
+	teal      = color.FgCyan.Render
+	purple    = color.Magenta.Render
+)
+
 type RestClient struct {
 	client      *http.Client
 	include     bool
 	prettyPrint bool
+	verbose     bool
 }
 
-func NewRestClient(include, prettyPrint bool) RestClient {
-	color.New(color.FgLightBlue)
+func NewRestClient(include, verbose, prettyPrint bool) RestClient {
 	return RestClient{
 		client: &http.Client{
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -29,58 +35,43 @@ func NewRestClient(include, prettyPrint bool) RestClient {
 			},
 		},
 		include:     include,
+		verbose:     verbose,
 		prettyPrint: prettyPrint,
 	}
 }
 
 func (rc RestClient) Get(url string, headers map[string]string) (string, error) {
-	request, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return "", err
-	}
-
-	return rc.doRequest(request, headers)
+	return rc.doReq("GET", url, headers, "")
 }
 
 func (rc RestClient) Put(url, body string, headers map[string]string) (string, error) {
-	request, err := http.NewRequest("PUT", url, strings.NewReader(body))
-	if err != nil {
-		return "", err
-	}
-
-	return rc.doRequest(request, headers)
+	return rc.doReq("PUT", url, headers, body)
 }
 
 func (rc RestClient) Post(url, body string, headers map[string]string) (string, error) {
-	request, err := http.NewRequest("POST", url, strings.NewReader(body))
-	if err != nil {
-		return "", err
-	}
-
-	return rc.doRequest(request, headers)
+	return rc.doReq("POST", url, headers, body)
 }
 
 func (rc RestClient) Delete(url string, body string, headers map[string]string) (string, error) {
-	request, err := http.NewRequest("DELETE", url, strings.NewReader(body))
-	if err != nil {
-		return "", err
-	}
-
-	return rc.doRequest(request, headers)
+	return rc.doReq("DELETE", url, headers, body)
 }
 
 func (rc RestClient) Head(url string, headers map[string]string) (string, error) {
-	request, err := http.NewRequest("DELETE", url, nil)
+	return rc.doReq("HEAD", url, headers, "")
+}
+
+func (rc RestClient) doReq(method, url string, headers map[string]string, body string) (string, error) {
+	request, err := rc.createRequest(method, url, headers, body)
 	if err != nil {
 		return "", err
 	}
 
-	return rc.doRequest(request, headers)
-}
-
-func (rc RestClient) doRequest(request *http.Request, headers map[string]string) (string, error) {
-	for k, v := range headers {
-		request.Header.Set(k, v)
+	if rc.verbose {
+		fmt.Printf("%s %s %s\n", teal(method), url, rc.sPrintProto(request.ProtoMajor, request.ProtoMinor))
+		for k, v := range request.Header {
+			fmt.Printf("%s: %s\n", lightBlue(k), strings.Join(v, ", "))
+		}
+		fmt.Printf("\n%s\n", body)
 	}
 
 	resp, err := rc.client.Do(request)
@@ -89,14 +80,20 @@ func (rc RestClient) doRequest(request *http.Request, headers map[string]string)
 	}
 	defer resp.Body.Close()
 
-	rc.printResponseHeaders(resp)
+	// Print Response Headers
+	if rc.include {
+		fmt.Printf("%s %s\n", rc.sPrintProto(resp.ProtoMajor, resp.ProtoMinor), purple(resp.Status))
+		for k, v := range resp.Header {
+			fmt.Printf("%s: %s\n", lightBlue(k), strings.Join(v, ", "))
+		}
+		fmt.Println()
+	}
 
 	dataBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", errors.New("error occurred reading response body - " + err.Error())
 	}
 
-	// do something with response
 	if rc.prettyPrint {
 		return prettyPrint(resp.Header.Get("Content-Type"), dataBytes)
 	}
@@ -104,14 +101,26 @@ func (rc RestClient) doRequest(request *http.Request, headers map[string]string)
 	return string(dataBytes), nil
 }
 
-func (rc RestClient) printResponseHeaders(resp *http.Response) {
-	if rc.include {
-		fmt.Printf("%s %s\n", color.FgLightBlue.Render(resp.Proto), color.FgCyan.Render(resp.Status))
-		for k, v := range resp.Header {
-			fmt.Printf("%s: %s\n", color.FgLightBlue.Render(k), strings.Join(v, ", "))
-		}
-		fmt.Println()
+func (rc RestClient) createRequest(method, url string, headers map[string]string, body string) (req *http.Request, err error) {
+	if len(body) == 0 {
+		req, err = http.NewRequest(method, url, nil)
+	} else {
+		req, err = http.NewRequest(method, url, strings.NewReader(body))
 	}
+
+	if err != nil {
+		return
+	}
+
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+	return
+}
+
+func (rc RestClient) sPrintProto(protoMajor, protoMinor int) string {
+	proto := color.Magenta.Sprintf("%d.%d", protoMajor, protoMinor)
+	return fmt.Sprintf("%s/%s", teal("HTTP"), proto)
 }
 
 func prettyPrint(contentType string, data []byte) (string, error) {

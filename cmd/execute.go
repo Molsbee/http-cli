@@ -40,7 +40,7 @@ var executeCmd = &cobra.Command{
 		}
 
 		variables := make(map[string]string)
-		client := service.NewRestClient(true, true)
+		client := service.NewRestClient(include, verbose, true)
 		for i := 0; i < len(requestFile.Requests); i++ {
 			request := requestFile.Requests[i]
 			color.FgLightRed.Printf("##### %s #####\n", request.Name)
