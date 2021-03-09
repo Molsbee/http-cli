@@ -45,7 +45,7 @@ var executeCmd = &cobra.Command{
 			request := requestFile.Requests[i]
 			color.FgLightRed.Printf("##### %s #####\n", request.Name)
 
-			resp, clientErr := executeRequest(client, request)
+			resp, clientErr := client.Execute(request.Method, request.URL, parseHeaders(request.Headers), request.Data)
 			if clientErr != nil {
 				fmt.Println(clientErr)
 				fmt.Println("##### END OF REQUEST #####")
@@ -64,21 +64,6 @@ var executeCmd = &cobra.Command{
 			color.FgLightRed.Println("##### END OF REQUEST #####")
 		}
 	},
-}
-
-func executeRequest(client service.RestClient, request model.Request) (string, error) {
-	switch {
-	case strings.EqualFold(request.Method, "GET"):
-		return client.Get(request.URL, parseHeaders(request.Headers))
-	case strings.EqualFold(request.Method, "PUT"):
-		return client.Put(request.URL, request.Data, parseHeaders(request.Headers))
-	case strings.EqualFold(request.Method, "POST"):
-		return client.Post(request.URL, request.Data, parseHeaders(request.Headers))
-	case strings.EqualFold(request.Method, "DELETE"):
-		return client.Delete(request.URL, request.Data, parseHeaders(request.Headers))
-	}
-
-	return "unsupported method", errors.New("unsupported method")
 }
 
 func updateVariables(variables map[string]string, request model.Request, resp string) bool {

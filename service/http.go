@@ -41,26 +41,26 @@ func NewRestClient(include, verbose, prettyPrint bool) RestClient {
 }
 
 func (rc RestClient) Get(url string, headers map[string]string) (string, error) {
-	return rc.doReq("GET", url, headers, "")
+	return rc.Execute("GET", url, headers, "")
 }
 
 func (rc RestClient) Put(url, body string, headers map[string]string) (string, error) {
-	return rc.doReq("PUT", url, headers, body)
+	return rc.Execute("PUT", url, headers, body)
 }
 
 func (rc RestClient) Post(url, body string, headers map[string]string) (string, error) {
-	return rc.doReq("POST", url, headers, body)
+	return rc.Execute("POST", url, headers, body)
 }
 
 func (rc RestClient) Delete(url string, body string, headers map[string]string) (string, error) {
-	return rc.doReq("DELETE", url, headers, body)
+	return rc.Execute("DELETE", url, headers, body)
 }
 
 func (rc RestClient) Head(url string, headers map[string]string) (string, error) {
-	return rc.doReq("HEAD", url, headers, "")
+	return rc.Execute("HEAD", url, headers, "")
 }
 
-func (rc RestClient) doReq(method, url string, headers map[string]string, body string) (string, error) {
+func (rc RestClient) Execute(method, url string, headers map[string]string, body string) (string, error) {
 	request, err := rc.createRequest(method, url, headers, body)
 	if err != nil {
 		return "", err
@@ -71,7 +71,9 @@ func (rc RestClient) doReq(method, url string, headers map[string]string, body s
 		for k, v := range request.Header {
 			fmt.Printf("%s: %s\n", lightBlue(k), strings.Join(v, ", "))
 		}
-		fmt.Printf("\n%s\n", body)
+		if len(body) != 0 {
+			fmt.Printf("\n%s\n\n", body)
+		}
 	}
 
 	resp, err := rc.client.Do(request)
