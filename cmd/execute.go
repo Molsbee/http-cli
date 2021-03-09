@@ -66,13 +66,13 @@ var executeCmd = &cobra.Command{
 	},
 }
 
-func updateVariables(variables map[string]string, request model.Request, resp string) bool {
+func updateVariables(variables map[string]string, request model.Request, resp string) (updated bool) {
 	for k, v := range request.Parse {
 		op, _ := jq.Parse(v)
 		value, _ := op.Apply([]byte(resp))
 		variables[k] = strings.TrimSuffix(strings.TrimPrefix(string(value), "\""), "\"")
-		return true
+		updated = true
 	}
 
-	return false
+	return
 }
