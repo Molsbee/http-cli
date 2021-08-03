@@ -16,6 +16,6 @@ var delete = &cobra.Command{
 			fmt.Println(err)
 		}
 
-		fmt.Println(response)
+		fmt.Println(response.Body)
 	},
 }

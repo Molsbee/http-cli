@@ -16,6 +16,6 @@ var get = &cobra.Command{
 			fmt.Println(err)
 		}
 
-		fmt.Print(response)
+		fmt.Print(response.Body)
 	},
 }

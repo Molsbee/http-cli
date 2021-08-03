@@ -11,9 +11,15 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
-	"os"
+	"log"
 	"strings"
 	"text/template"
+)
+
+const (
+	green = color.FgLightGreen
+	gray  = color.FgGray
+	red   = color.FgLightRed
 )
 
 var executeCmd = &cobra.Command{
@@ -29,41 +35,55 @@ var executeCmd = &cobra.Command{
 		filePath := args[0]
 		b, err := ioutil.ReadFile(filePath)
 		if err != nil {
-			fmt.Printf("failed to read file (%s) - %s", filePath, err)
-			os.Exit(1)
+			log.Panicf("failed to read file (%s) - %s", filePath, err)
 		}
 
 		var requestFile model.RequestFile
 		if err := yaml.Unmarshal(b, &requestFile); err != nil {
-			fmt.Printf("failed to convert file to expected format - %s", err)
-			os.Exit(1)
+			log.Panicf("failed to convert file to expected format - %s", err)
 		}
 
-		variables := make(map[string]string)
+		green.Printf("Executing: %s\n\n", requestFile.Name)
+		variables := requestFile.Variables
+		if len(variables) != 0 {
+			updateTemplate(filePath, variables, &requestFile)
+		}
+
 		client := service.NewRestClient(include, verbose, true)
 		for i := 0; i < len(requestFile.Requests); i++ {
 			request := requestFile.Requests[i]
-			color.FgLightRed.Printf("##### %s #####\n", request.Name)
-
+			green.Printf("→ %s\n", request.Name)
 			resp, clientErr := client.Execute(request.Method, request.URL, parseHeaders(request.Headers), request.Data)
 			if clientErr != nil {
 				fmt.Println(clientErr)
 				color.FgLightRed.Println("##### END OF REQUEST #####")
+				if request.ExitOnError {
+					break
+				}
+
 				continue
 			}
 
-			if updated := updateVariables(variables, request, resp); updated {
-				var buffer bytes.Buffer
-				temp, _ := template.ParseFiles(filePath)
-				temp.Execute(&buffer, variables)
-
-				yaml.Unmarshal(buffer.Bytes(), &requestFile)
+			gray.Printf("%s %s [%s, %s, %s]\n", request.Method, request.URL, resp.Status, resp.ContentLength, resp.Duration)
+			if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+				if updated := updateVariables(variables, request, resp.Body); updated {
+					updateTemplate(filePath, variables, &requestFile)
+				}
 			}
+			printStatusCodeMessage(resp.StatusCode)
 
-			fmt.Println(resp)
+			//fmt.Println(resp.Body)
 			color.FgLightRed.Println("##### END OF REQUEST #####")
 		}
 	},
+}
+
+func printStatusCodeMessage(statusCode int) {
+	mark := red.Sprintf("✘")
+	if statusCode >= 200 && statusCode < 300 {
+		mark = green.Sprint("✓")
+	}
+	fmt.Printf("%s %s", mark, gray.Sprintf("Status Code is %d", statusCode))
 }
 
 func updateVariables(variables map[string]string, request model.Request, resp string) (updated bool) {
@@ -75,4 +95,11 @@ func updateVariables(variables map[string]string, request model.Request, resp st
 	}
 
 	return
+}
+
+func updateTemplate(filePath string, variables map[string]string, requestFile *model.RequestFile) {
+	var buffer bytes.Buffer
+	temp, _ := template.ParseFiles(filePath)
+	temp.Execute(&buffer, variables)
+	yaml.Unmarshal(buffer.Bytes(), &requestFile)
 }
