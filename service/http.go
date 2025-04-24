@@ -6,14 +6,14 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/Molsbee/http-cli/model"
-	"github.com/gookit/color"
-	"github.com/yosssi/gohtml"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/Molsbee/http-cli/model"
+	"github.com/gookit/color"
+	"github.com/yosssi/gohtml"
 )
 
 var (
@@ -97,7 +97,7 @@ func (rc RestClient) Execute(method, url string, headers map[string]string, body
 		fmt.Println()
 	}
 
-	dataBytes, readBodyError := ioutil.ReadAll(resp.Body)
+	dataBytes, readBodyError := io.ReadAll(resp.Body)
 	if readBodyError != nil {
 		err = errors.New("error occurred reading response body - " + readBodyError.Error())
 		return
